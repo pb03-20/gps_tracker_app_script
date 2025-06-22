@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Live GPS Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+      background-color: #f0f9ff;
+    }
+    #status {
+      margin-top: 20px;
+      font-size: 18px;
+      color: green;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>📍 Live GPS Tracker</h2>
+  <p>This will update your live location to the sheet every 2 minutes.</p>
+  <div id="status">⏳ Waiting...</div>
+
+  <script>
+    let userName = "";
+
+    // Ask name once
+    function askName() {
+      userName = prompt("Enter your name:");
+      if (!userName) userName = "Unknown";
+      document.getElementById("status").innerText = `Hi ${userName}, starting GPS tracking...`;
+    }
+
+    // Send location to Apps Script
+    function sendLocation(lat, lon) {
+      fetch("https://script.google.com/macros/s/AKfycbwg-EYCXZ92X5GFpqU7ifNJfmGZFpmfebwndHaRr_zGvg42nNx8XDNU237L8WXmxiVg_A/exec", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          name: userName,
+          lat: lat,
+          lon: lon
+        })
+      })
+      .then(res => res.text())
+      .then(msg => {
+        const time = new Date().toLocaleTimeString();
+        document.getElementById("status").innerText = `✅ Sent at ${time}`;
+      })
+      .catch(err => {
+        document.getElementById("status").innerText = "❌ Failed to send location.";
+        console.error(err);
+      });
+    }
+
+    // Get current location and send it
+    function getAndSendLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(position => {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+          sendLocation(lat, lon);
+        }, error => {
+          document.getElementById("status").innerText = "❌ GPS error: " + error.message;
+        });
+      } else {
+        document.getElementById("status").innerText = "❌ Geolocation not supported.";
+      }
+    }
+
+    // Start
+    askName();
+    getAndSendLocation();
+    setInterval(getAndSendLocation, 2 * 60 * 1000); // every 2 minutes
+  </script>
+
+</body>
+</html>
