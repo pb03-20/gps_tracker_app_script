@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Live GPS Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      text-align: center;
+      background-color: #f0f8ff;
+    }
+    #status {
+      margin-top: 20px;
+      font-size: 18px;
+      color: green;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>📍 Live GPS Tracker</h2>
+  <p>This app will send your location every 2 minutes.</p>
+  <div id="status">⏳ Waiting for location...</div>
+
+  <script>
+    let userName = "";
+
+    // Ask for user's name once
+    function askUserName() {
+      userName = prompt("Enter your name:");
+      if (!userName || userName.trim() === "") {
+        userName = "Unknown";
+      }
+      document.getElementById("status").innerText = `Hi ${userName}, tracking started...`;
+    }
+
+    // Function to send location to Google Apps Script
+    function sendLocation(lat, lon) {
+      const url = "https://script.google.com/macros/s/AKfycbwg-EYCXZ92X5GFpqU7ifNJfmGZFpmfebwndHaRr_zGvg42nNx8XDNU237L8WXmxiVg_A/exec";
+
+      const data = {
+        name: userName,
+        lat: lat,
+        lon: lon
+      };
+
+      fetch(url, {
+        method: "POST",
+        mode: "no-cors",  // Prevent CORS error when testing locally
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+      })
+      .then(() => {
+        const now = new Date().toLocaleTimeString();
+        document.getElementById("status").innerText = `✅ Location sent at ${now}`;
+      })
+      .catch((err) => {
+        document.getElementById("status").innerText = "❌ Failed to send location.";
+        console.error(err);
+      });
+    }
+
+    // Get current location and send
+    function getAndSendLocation() {
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            sendLocation(lat, lon);
+          },
+          (error) => {
+            document.getElementById("status").innerText = "❌ GPS Error: " + error.message;
+          }
+        );
+      } else {
+        document.getElementById("status").innerText = "❌ Geolocation not supported in your browser.";
+      }
+    }
+
+    // Start tracking
+    askUserName();
+    getAndSendLocation();
+    setInterval(getAndSendLocation, 2 * 60 * 1000); // Every 2 minutes
+  </script>
+
+</body>
+</html>
